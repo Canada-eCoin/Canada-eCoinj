@@ -21,14 +21,14 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.google</groupId>
-        <artifactId>digitalcoinj-parent</artifactId>
+        <artifactId>cancoinj-parent</artifactId>
         <version>0.12-SNAPSHOT</version>
     </parent>
 
-    <artifactId>digitalcoinj</artifactId>
+    <artifactId>cancoinj</artifactId>
 
-    <name>digitalcoinj</name>
-    <description>A Java digitalcoin library</description>
+    <name>cancoinj</name>
+    <description>A Java cancoin library</description>
 
     <packaging>jar</packaging>
 

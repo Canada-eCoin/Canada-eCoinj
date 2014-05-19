@@ -15,9 +15,9 @@ import java.util.Vector;
 public class CoinDefinition {
 
 
-    public static final String coinName = "digitalcoin";
-    public static final String coinTicker = "DGC";
-    public static final String coinURIScheme = "digitalcoin";
+    public static final String coinName = "Canada eCoin";
+    public static final String coinTicker = "CDN";
+    public static final String coinURIScheme = "Canadaecoin";
     public static final String cryptsyMarketId = "26";
     public static final String cryptsyMarketCurrency = "BTC";
     public static final String PATTERN_PRIVATE_KEY_START = "6";
@@ -29,13 +29,13 @@ public class CoinDefinition {
     public static final CoinPrecision coinPrecision = CoinPrecision.Coins;
 
 
-    public static final String BLOCKEXPLORER_BASE_URL_PROD = "http://dgc.blockr.io/";    //blockr.io
+    public static final String BLOCKEXPLORER_BASE_URL_PROD = "http://explore.canadaecoin.ca/";    //blockr.io
     public static final String BLOCKEXPLORER_ADDRESS_PATH = "address/info/";             //blockr.io path
     public static final String BLOCKEXPLORER_TRANSACTION_PATH = "tx/info/";              //blockr.io path
     public static final String BLOCKEXPLORER_BLOCK_PATH = "block/info/";                 //blockr.io path
     public static final String BLOCKEXPLORER_BASE_URL_TEST = BLOCKEXPLORER_BASE_URL_PROD;
 
-    public static final String DONATION_ADDRESS = "DPdbL3n3Y3ypwVEvY3wABmpbjsd3AVqm5M";  //HashEngineering donation DGC address
+    public static final String DONATION_ADDRESS = "DPdbL3n3Y3ypwVEvY3wABmpbjsd3AVqm5M";  //ramzimaalej donation BTC address
 
     enum CoinHash {
         SHA256,
@@ -44,18 +44,10 @@ public class CoinDefinition {
     public static final CoinHash coinPOWHash = CoinHash.scrypt;
 
     public static boolean checkpointFileSupport = true;
-    //Original Values
-    public static final int TARGET_TIMESPAN_0 = (int)(6 * 60 * 3 * 20);  // 3.5 days per difficulty cycle, on average.
-    public static final int TARGET_SPACING_0 = (int)(1 * 20);  // 20 seconds per block.
-    public static final int INTERVAL_0 = TARGET_TIMESPAN_0 / TARGET_SPACING_0;  //1080 blocks
 
-    public static final int TARGET_TIMESPAN_1 = (int)(108 * 20);  // 36 minutes per difficulty cycle, on average.
-    public static final int TARGET_SPACING_1 = (int)(1 * 20);  // 20 seconds per block.
-    public static final int INTERVAL_1 = TARGET_TIMESPAN_1 / TARGET_SPACING_1;  //108 blocks
-
-    public static final int TARGET_TIMESPAN = (int)(108 * 40);  // 72 minutes per difficulty cycle, on average.
-    public static final int TARGET_SPACING = (int)(1 * 40);  // 40 seconds per block.
-    public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;  //108 blocks
+    public static final int TARGET_TIMESPAN = (int)(24 * 60 * 60);  // 24hours per difficulty cycle, on average.
+    public static final int TARGET_SPACING = (int)(0.5 * 60);  // 30 seconds per block.
+    public static final int INTERVAL = TARGET_TIMESPAN / TARGET_SPACING;  //2880 blocks
 
     private static int nDifficultySwitchHeight = 476280;    //retarget every 108 instead of 1080 blocks; adjust by +100%/-50% instead of +400/-75%
     private static int nInflationFixHeight = 523800;        //increase block time to 40 from 20 seconds; decrease reward from 20 to 15 DGC
@@ -64,24 +56,13 @@ public class CoinDefinition {
 
 
     public static final int getInterval(int height, boolean testNet) {
-        if(height < nDifficultySwitchHeight)
-            return INTERVAL_0;    //1080
-        else if(height < nInflationFixHeight)
-            return INTERVAL_1;    //108
-        else
-            return INTERVAL;      //108
+        return INTERVAL;      //2880
     }
     public static final int getIntervalCheckpoints() {
-            return INTERVAL_0;    //1080
-
+        return INTERVAL;    //1080
     }
     public static final int getTargetTimespan(int height, boolean testNet) {
-        if(height < nDifficultySwitchHeight)
-            return TARGET_TIMESPAN_0;  //3.5 days
-        else if(height < nInflationFixHeight)
-            return TARGET_TIMESPAN_1;  //36 min
-        else
-            return TARGET_TIMESPAN;    //72 min
+        return TARGET_TIMESPAN;    //24hours
     }
     public static int getMaxTimeSpan(int value, int height, boolean testNet)
     {
@@ -101,29 +82,29 @@ public class CoinDefinition {
         else
             return value * 55 / 73;
     }
-    public static int spendableCoinbaseDepth = 5; //main.h: static const int COINBASE_MATURITY
-    public static final BigInteger MAX_MONEY = BigInteger.valueOf(200000000).multiply(Utils.COIN);                 //main.h:  MAX_MONEY
-    //public static final String MAX_MONEY_STRING = "200000000";     //main.h:  MAX_MONEY
+    public static int spendableCoinbaseDepth = 100; //main.h: static const int COINBASE_MATURITY
+    public static final BigInteger MAX_MONEY = BigInteger.valueOf(100000000).multiply(Utils.COIN); //main.h:  MAX_MONEY
 
-    public static final BigInteger DEFAULT_MIN_TX_FEE = BigInteger.valueOf(10000000);   // MIN_TX_FEE
+    // TODO set dust limit
+    public static final BigInteger DEFAULT_MIN_TX_FEE = BigInteger.valueOf(100000);   // MIN_TX_FEE
     public static final BigInteger DUST_LIMIT = Utils.CENT; //main.h CTransaction::GetMinFee        0.01 coins
 
-    public static final int PROTOCOL_VERSION = 60002;          //version.h PROTOCOL_VERSION
+    public static final int PROTOCOL_VERSION = 70002;          //version.h PROTOCOL_VERSION
     public static final int MIN_PROTOCOL_VERSION = 209;        //version.h MIN_PROTO_VERSION
 
     public static final int BLOCK_CURRENTVERSION = 1;   //CBlock::CURRENT_VERSION
     public static final int MAX_BLOCK_SIZE = 1 * 1000 * 1000;
 
 
-    public static final boolean supportsBloomFiltering = false; //Requires PROTOCOL_VERSION 70000 in the client
+    public static final boolean supportsBloomFiltering = false; //Requires PROTOCOL_VERSION 70002 in the client
 
-    public static final int Port    = 7999;       //protocol.h GetDefaultPort(testnet=false)
-    public static final int TestPort = 17999;     //protocol.h GetDefaultPort(testnet=true)
+    public static final int Port    = 34331;       //protocol.h GetDefaultPort(testnet=false)
+    public static final int TestPort = 41331;     //protocol.h GetDefaultPort(testnet=true)
 
     //
     //  Production
     //
-    public static final int AddressHeader = 30;             //base58.h CBitcoinAddress::PUBKEY_ADDRESS
+    public static final int AddressHeader = 28;             //base58.h CBitcoinAddress::PUBKEY_ADDRESS
     public static final int p2shHeader = 5;             //base58.h CBitcoinAddress::SCRIPT_ADDRESS
     public static final boolean allowBitcoinPrivateKey = true; //for backward compatibility with previous version of digitalcoin
     public static final int dumpedPrivateKeyHeader = 128;   //common to all coins
@@ -133,7 +114,7 @@ public class CoinDefinition {
     static public long genesisBlockDifficultyTarget = (0x1e0ffff0L);         //main.cpp: LoadBlockIndex
     static public long genesisBlockTime = 1367867384L;                       //main.cpp: LoadBlockIndex
     static public long genesisBlockNonce = (672176);                         //main.cpp: LoadBlockIndex
-    static public String genesisHash = "5e039e1ca1dbf128973bf6cff98169e40a1b194c3b91463ab74956f413b2f9c8"; //main.cpp: hashGenesisBlock
+    static public String genesisHash = "0x863626dadaef221e2e2f30ff3dacae44cabdae9e0028058072181b3fb675d94a"; //main.cpp: hashGenesisBlock
     static public int genesisBlockValue = 50;                                                              //main.cpp: LoadBlockIndex
     //taken from the raw data of the block explorer
     static public String genesisXInBytes = "04ffff001d0104294469676974616c636f696e2c20412043757272656e637920666f722061204469676974616c20416765";   //"Digitalcoin, A Currency for a Digital Age"
