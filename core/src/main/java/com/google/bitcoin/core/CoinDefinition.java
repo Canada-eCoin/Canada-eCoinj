@@ -88,9 +88,9 @@ public class CoinDefinition {
     public static final long PacketMagic = 0xfbc0b6db;      //0xfb, 0xc0, 0xb6, 0xdb
 
     //Genesis Block Information from main.cpp: LoadBlockIndex
-    static public long genesisBlockDifficultyTarget = (0x1e0ffff0L);         //main.cpp: LoadBlockIndex
-    static public long genesisBlockTime = 1367867384L;                       //main.cpp: LoadBlockIndex
-    static public long genesisBlockNonce = (672176);                         //main.cpp: LoadBlockIndex
+    static public long genesisBlockDifficultyTarget = (0x1e0ffff0L);         //main.cpp: LoadBlockIndex checked
+    static public long genesisBlockTime = 1396006396L;                       //main.cpp: LoadBlockIndex checked
+    static public long genesisBlockNonce = (800327);                         //main.cpp: LoadBlockIndex checked
     static public String genesisHash = "0x863626dadaef221e2e2f30ff3dacae44cabdae9e0028058072181b3fb675d94a"; //main.cpp: hashGenesisBlock checked
     static public int genesisBlockValue = 50;                                                              //main.cpp: LoadBlockIndex checked
     //taken from the raw data of the block explorer
