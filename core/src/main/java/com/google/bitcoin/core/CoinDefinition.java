@@ -92,7 +92,7 @@ public class CoinDefinition {
     static public long genesisBlockTime = 1367867384L;                       //main.cpp: LoadBlockIndex
     static public long genesisBlockNonce = (672176);                         //main.cpp: LoadBlockIndex
     static public String genesisHash = "0x863626dadaef221e2e2f30ff3dacae44cabdae9e0028058072181b3fb675d94a"; //main.cpp: hashGenesisBlock checked
-    static public int genesisBlockValue = 50;                                                              //main.cpp: LoadBlockIndex
+    static public int genesisBlockValue = 50;                                                              //main.cpp: LoadBlockIndex checked
     //taken from the raw data of the block explorer
     static public String genesisXInBytes = "04ffff001d0104294469676974616c636f696e2c20412043757272656e637920666f722061204469676974616c20416765";
     static public String genessiXOutBytes = "04a5814813115273a109cff99907ba4a05d951873dae7acb6c973d0c9e7c88911a3dbc9aa600deac241b91707e7b4ffb30ad91c8e56e695a1ddf318592988afe0a";
@@ -100,8 +100,6 @@ public class CoinDefinition {
     //net.cpp strDNSSeed checked
     static public String[] dnsSeeds = new String[] {
             "seed.canadaecoin.ca"
-            //"54.208.77.156",
-            //"68.14.170.140",
     };
 
     public static int minBroadcastConnections = 1;   //0 for default; we need more peers.
