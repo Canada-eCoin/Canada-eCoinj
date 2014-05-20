@@ -86,7 +86,7 @@ public abstract class NetworkParameters implements Serializable {
      */
     protected int spendableCoinbaseDepth;
     protected int subsidyDecreaseBlockCount;
-    
+
     protected int[] acceptableAddressCodes;
     protected String[] dnsSeeds;
     protected Map<Integer, Sha256Hash> checkpoints = new HashMap<Integer, Sha256Hash>();
@@ -95,7 +95,6 @@ public abstract class NetworkParameters implements Serializable {
         alertSigningKey = SATOSHI_KEY;
         genesisBlock = createGenesis(this);
     }
-    //TODO:  put these bytes into the CoinDefinition
     private static Block createGenesis(NetworkParameters n) {
         Block genesisBlock = new Block(n);
         Transaction t = new Transaction(n);
@@ -104,11 +103,9 @@ public abstract class NetworkParameters implements Serializable {
             //
             //   coin dependent
             byte[] bytes = Hex.decode(CoinDefinition.genesisXInBytes);
-            //byte[] bytes = Hex.decode("04ffff001d0104294469676974616c636f696e2c20412043757272656e637920666f722061204469676974616c20416765");
             t.addInput(new TransactionInput(n, t, bytes));
             ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
             Script.writeBytes(scriptPubKeyBytes, Hex.decode(CoinDefinition.genessiXOutBytes));
-                    //("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"));
             scriptPubKeyBytes.write(ScriptOpCodes.OP_CHECKSIG);
             t.addOutput(new TransactionOutput(n, t, Utils.toNanoCoins(CoinDefinition.genesisBlockValue, 0), scriptPubKeyBytes.toByteArray()));
         } catch (Exception e) {
@@ -118,42 +115,18 @@ public abstract class NetworkParameters implements Serializable {
         genesisBlock.addTransaction(t);
         return genesisBlock;
     }
-    private static Block createGenesis1(NetworkParameters n) {
-        Block genesisBlock = new Block(n);
-        Transaction t = new Transaction(n);
-        try {
-            // A script containing the difficulty bits and the following message:
-            //
-            //   "Digitalcoin, A Currency for a Digital Age"
-            byte[] bytes = Hex.decode
-                    ("04b217bb4e022309");
-            t.addInput(new TransactionInput(n, t, bytes));
-            ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
-            Script.writeBytes(scriptPubKeyBytes, Hex.decode
-                    ("04a5814813115273a109cff99907ba4a05d951873dae7acb6c973d0c9e7c88911a3dbc9aa600deac241b91707e7b4ffb30ad91c8e56e695a1ddf318592988afe0a"));
-            scriptPubKeyBytes.write(ScriptOpCodes.OP_CHECKSIG);
-            t.addOutput(new TransactionOutput(n, t, Utils.toNanoCoins(50, 0), scriptPubKeyBytes.toByteArray()));
-        } catch (Exception e) {
-            // Cannot happen.
-            throw new RuntimeException(e);
-        }
-        genesisBlock.addTransaction(t);
-        return genesisBlock;
-    }
 
+    public static final int TARGET_TIMESPAN = CoinDefinition.TARGET_TIMESPAN;
+    public static final int TARGET_SPACING = CoinDefinition.TARGET_SPACING;
+    public static final int INTERVAL = CoinDefinition.INTERVAL;
 
-
-    public static final int TARGET_TIMESPAN = CoinDefinition.TARGET_TIMESPAN;//14 * 24 * 60 * 60;  // 2 weeks per difficulty cycle, on average.
-    public static final int TARGET_SPACING = CoinDefinition.TARGET_SPACING;// 10 * 60;  // 10 minutes per block.
-    public static final int INTERVAL = CoinDefinition.INTERVAL;//TARGET_TIMESPAN / TARGET_SPACING;
-    
     /**
      * Blocks with a timestamp after this should enforce BIP 16, aka "Pay to script hash". This BIP changed the
      * network rules in a soft-forking manner, that is, blocks that don't follow the rules are accepted but not
      * mined upon and thus will be quickly re-orged out as long as the majority are enforcing the rule.
      */
     public static final int BIP16_ENFORCE_TIME = 1333238400;
-    
+
     /**
      * The maximum money to be generated
      */

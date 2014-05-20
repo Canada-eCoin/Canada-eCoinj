@@ -189,14 +189,14 @@ public abstract class AbstractBlockChain {
     public void removeListener(BlockChainListener listener) {
         ListenerRegistration.removeFromList(listener, listeners);
     }
-    
+
     /**
      * Returns the {@link BlockStore} the chain was constructed with. You can use this to iterate over the chain.
      */
     public BlockStore getBlockStore() {
         return blockStore;
     }
-    
+
     /**
      * Adds/updates the given {@link Block} with the block store.
      * This version is used when the transactions have not been verified.
@@ -206,7 +206,7 @@ public abstract class AbstractBlockChain {
      */
     protected abstract StoredBlock addToBlockStore(StoredBlock storedPrev, Block block)
             throws BlockStoreException, VerificationException;
-    
+
     /**
      * Adds/updates the given {@link StoredBlock} with the block store.
      * This version is used when the transactions have already been verified to properly spend txOutputChanges.
@@ -219,14 +219,14 @@ public abstract class AbstractBlockChain {
     protected abstract StoredBlock addToBlockStore(StoredBlock storedPrev, Block header,
                                                    @Nullable TransactionOutputChanges txOutputChanges)
             throws BlockStoreException, VerificationException;
-    
+
     /**
      * Called before setting chain head in memory.
      * Should write the new head to block store and then commit any database transactions
      * that were started by disconnectTransactions/connectTransactions.
      */
     protected abstract void doSetChainHead(StoredBlock chainHead) throws BlockStoreException;
-    
+
     /**
      * Called if we (possibly) previously called disconnectTransaction/connectTransactions,
      * but will not be calling preSetChainHead as a block failed verification.
@@ -234,7 +234,7 @@ public abstract class AbstractBlockChain {
      * disconnectTransactions/connectTransactions.
      */
     protected abstract void notSettingChainHead() throws BlockStoreException;
-    
+
     /**
      * For a standard BlockChain, this should return blockStore.get(hash),
      * for a FullPrunedBlockChain blockStore.getOnceUndoableStoredBlock(hash)
@@ -263,7 +263,7 @@ public abstract class AbstractBlockChain {
                     block.toString(), e);
         }
     }
-    
+
     /**
      * Processes a received block and tries to add it to the chain. If there's something wrong with the block an
      * exception is thrown. If the block is OK but cannot be connected to the chain at this time, returns false.
@@ -292,13 +292,13 @@ public abstract class AbstractBlockChain {
                     block.toString(), e);
         }
     }
-    
+
     /**
      * Whether or not we are maintaining a set of unspent outputs and are verifying all transactions.
      * Also indicates that all calls to add() should provide a block containing transactions
      */
     protected abstract boolean shouldVerifyTransactions();
-    
+
     /**
      * Connect each transaction in block.transactions, verifying them as we go and removing spent outputs
      * If an error is encountered in a transaction, no changes should be made to the underlying BlockStore.
@@ -319,8 +319,8 @@ public abstract class AbstractBlockChain {
      * @throws BlockStoreException if the block store had an underlying error or newBlock does not exist in the block store at all.
      * @return The full set of all changes made to the set of open transaction outputs.
      */
-    protected abstract TransactionOutputChanges connectTransactions(StoredBlock newBlock) throws VerificationException, BlockStoreException, PrunedException;    
-    
+    protected abstract TransactionOutputChanges connectTransactions(StoredBlock newBlock) throws VerificationException, BlockStoreException, PrunedException;
+
     // Stat counters.
     private long statsLastTime = System.currentTimeMillis();
     private long statsBlocksAdded;
@@ -424,7 +424,7 @@ public abstract class AbstractBlockChain {
                 if (!tx.isFinal(storedPrev.getHeight() + 1, block.getTimeSeconds()))
                    throw new VerificationException("Block contains non-final transaction");
         }
-        
+
         StoredBlock head = getChainHead();
         if (storedPrev.equals(head)) {
             if (filtered && filteredTxn.size() > 0)  {
@@ -434,7 +434,7 @@ public abstract class AbstractBlockChain {
             }
             if (expensiveChecks && block.getTimeSeconds() <= getMedianTimestampOfRecentBlocks(head, blockStore))
                 throw new VerificationException("Block's timestamp is too early");
-            
+
             // This block connects to the best known block, it is a normal continuation of the system.
             TransactionOutputChanges txOutChanges = null;
             if (shouldVerifyTransactions())
@@ -477,14 +477,14 @@ public abstract class AbstractBlockChain {
                             splitPointHeight, splitPointHash, newBlock.getHeader().getHashAsString());
                 }
             }
-            
+
             // We may not have any transactions if we received only a header, which can happen during fast catchup.
             // If we do, send them to the wallet but state that they are on a side chain so it knows not to try and
             // spend them until they become activated.
             if (block.transactions != null || filtered) {
                 informListenersForNewBlock(block, NewBlockType.SIDE_CHAIN, filteredTxHashList, filteredTxn, newBlock);
             }
-            
+
             if (haveNewBestChain)
                 handleNewBestChain(storedPrev, newBlock, block, expensiveChecks);
         }
@@ -576,11 +576,11 @@ public abstract class AbstractBlockChain {
         timestamps[10] = storedBlock.getHeader().getTimeSeconds();
         while (unused >= 0 && (storedBlock = storedBlock.getPrev(store)) != null)
             timestamps[unused--] = storedBlock.getHeader().getTimeSeconds();
-        
+
         Arrays.sort(timestamps, unused+1, 11);
         return timestamps[unused + (11-unused)/2];
     }
-    
+
     /**
      * Disconnect each transaction in the block (after reading it from the block store)
      * Only called if(shouldVerifyTransactions())
@@ -591,7 +591,7 @@ public abstract class AbstractBlockChain {
 
     /**
      * Called as part of connecting a block when the new block results in a different chain having higher total work.
-     * 
+     *
      * if (shouldVerifyTransactions)
      *     Either newChainHead needs to be in the block store as a FullStoredBlock, or (block != null && block.transactions != null)
      */
@@ -881,146 +881,6 @@ public abstract class AbstractBlockChain {
         if (newDifficulty.compareTo(params.proofOfWorkLimit) > 0) {
             log.info("Difficulty hit proof of work limit: {}", newDifficulty.toString(16));
             newDifficulty = params.proofOfWorkLimit;
-        }
-
-        int accuracyBytes = (int) (nextBlock.getDifficultyTarget() >>> 24) - 3;
-        BigInteger receivedDifficulty = nextBlock.getDifficultyTargetAsInteger();
-
-        // The calculated difficulty is to a higher precision than received, so reduce here.
-        BigInteger mask = BigInteger.valueOf(0xFFFFFFL).shiftLeft(accuracyBytes * 8);
-        newDifficulty = newDifficulty.and(mask);
-
-        if (newDifficulty.compareTo(receivedDifficulty) != 0)
-            throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
-                    receivedDifficulty.toString(16) + " vs " + newDifficulty.toString(16));
-    }
-    private void checkDifficultyTransitionsNew(StoredBlock storedPrev, Block nextBlock) throws BlockStoreException, VerificationException {
-        checkState(lock.isHeldByCurrentThread());
-        Block prev = storedPrev.getHeader();
-        
-        // Is this supposed to be a difficulty transition point?
-        if ((storedPrev.getHeight() + 1) % CoinDefinition.getInterval(storedPrev.getHeight() + 1, params.getId() == params.ID_TESTNET) != 0) {
-
-            // TODO: Refactor this hack after 0.5 is released and we stop supporting deserialization compatibility.
-            // This should be a method of the NetworkParameters, which should in turn be using singletons and a subclass
-            // for each network type. Then each network can define its own difficulty transition rules.
-            if (params.getId().equals(NetworkParameters.ID_TESTNET) && nextBlock.getTime().after(testnetDiffDate)) {
-                checkTestnetDifficulty(storedPrev, prev, nextBlock);
-                return;
-            }
-
-            // No ... so check the difficulty didn't actually change.
-            if (nextBlock.getDifficultyTarget() != prev.getDifficultyTarget())
-                throw new VerificationException("Unexpected change in difficulty at height " + storedPrev.getHeight() +
-                        ": " + Long.toHexString(nextBlock.getDifficultyTarget()) + " vs " +
-                        Long.toHexString(prev.getDifficultyTarget()));
-            return;
-        }
-
-        // We need to find a block far back in the chain. It's OK that this is expensive because it only occurs every
-        // two weeks after the initial block chain download.
-        long now = System.currentTimeMillis();
-        StoredBlock cursor = blockStore.get(prev.getHash());
-        for (int i = 0; i < params.getInterval() - 1; i++) {
-            if (cursor == null) {
-                // This should never happen. If it does, it means we are following an incorrect or busted chain.
-                throw new VerificationException(
-                        "Difficulty transition point but we did not find a way back to the genesis block.");
-            }
-            cursor = blockStore.get(cursor.getHeader().getPrevBlockHash());
-        }
-        long elapsed = System.currentTimeMillis() - now;
-        if (elapsed > 50)
-            log.info("Difficulty transition traversal took {}msec", elapsed);
-
-        Block blockIntervalAgo = cursor.getHeader();
-        int timespan = (int) (prev.getTimeSeconds() - blockIntervalAgo.getTimeSeconds());
-        // Limit the adjustment step.
-        final int targetTimespan = CoinDefinition.getTargetTimespan(storedPrev.getHeight() + 1, params.getId() == params.ID_TESTNET);//params.getTargetTimespan();
-
-        int maxActualTimeSpan = CoinDefinition.getMaxTimeSpan(targetTimespan, storedPrev.getHeight() + 1, params.getId() == params.ID_TESTNET);
-        int minActualTimeSpan = CoinDefinition.getMinTimeSpan(targetTimespan, storedPrev.getHeight() + 1, params.getId() == params.ID_TESTNET);
-
-        if (timespan < minActualTimeSpan)
-            timespan = minActualTimeSpan;
-        if (timespan > maxActualTimeSpan)
-            timespan = maxActualTimeSpan;
-
-        BigInteger newDifficulty = Utils.decodeCompactBits(prev.getDifficultyTarget());
-        newDifficulty = newDifficulty.multiply(BigInteger.valueOf(timespan));
-        newDifficulty = newDifficulty.divide(BigInteger.valueOf(targetTimespan));
-
-        if (newDifficulty.compareTo(params.getProofOfWorkLimit()) > 0) {
-            log.info("Difficulty hit proof of work limit: {}", newDifficulty.toString(16));
-            newDifficulty = params.getProofOfWorkLimit();
-        }
-
-        int accuracyBytes = (int) (nextBlock.getDifficultyTarget() >>> 24) - 3;
-        BigInteger receivedDifficulty = nextBlock.getDifficultyTargetAsInteger();
-
-        // The calculated difficulty is to a higher precision than received, so reduce here.
-        BigInteger mask = BigInteger.valueOf(0xFFFFFFL).shiftLeft(accuracyBytes * 8);
-        newDifficulty = newDifficulty.and(mask);
-
-        if (newDifficulty.compareTo(receivedDifficulty) != 0)
-            throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
-                    receivedDifficulty.toString(16) + " vs " + newDifficulty.toString(16));
-    }
-    private void checkDifficultyTransitions_original(StoredBlock storedPrev, Block nextBlock) throws BlockStoreException, VerificationException {
-        checkState(lock.isHeldByCurrentThread());
-        Block prev = storedPrev.getHeader();
-
-        // Is this supposed to be a difficulty transition point?
-        if ((storedPrev.getHeight() + 1) % params.getInterval() != 0) {
-
-            // TODO: Refactor this hack after 0.5 is released and we stop supporting deserialization compatibility.
-            // This should be a method of the NetworkParameters, which should in turn be using singletons and a subclass
-            // for each network type. Then each network can define its own difficulty transition rules.
-            if (params.getId().equals(NetworkParameters.ID_TESTNET) && nextBlock.getTime().after(testnetDiffDate)) {
-                checkTestnetDifficulty(storedPrev, prev, nextBlock);
-                return;
-            }
-
-            // No ... so check the difficulty didn't actually change.
-            if (nextBlock.getDifficultyTarget() != prev.getDifficultyTarget())
-                throw new VerificationException("Unexpected change in difficulty at height " + storedPrev.getHeight() +
-                        ": " + Long.toHexString(nextBlock.getDifficultyTarget()) + " vs " +
-                        Long.toHexString(prev.getDifficultyTarget()));
-            return;
-        }
-
-        // We need to find a block far back in the chain. It's OK that this is expensive because it only occurs every
-        // two weeks after the initial block chain download.
-        long now = System.currentTimeMillis();
-        StoredBlock cursor = blockStore.get(prev.getHash());
-        for (int i = 0; i < params.getInterval() - 1; i++) {
-            if (cursor == null) {
-                // This should never happen. If it does, it means we are following an incorrect or busted chain.
-                throw new VerificationException(
-                        "Difficulty transition point but we did not find a way back to the genesis block.");
-            }
-            cursor = blockStore.get(cursor.getHeader().getPrevBlockHash());
-        }
-        long elapsed = System.currentTimeMillis() - now;
-        if (elapsed > 50)
-            log.info("Difficulty transition traversal took {}msec", elapsed);
-
-        Block blockIntervalAgo = cursor.getHeader();
-        int timespan = (int) (prev.getTimeSeconds() - blockIntervalAgo.getTimeSeconds());
-        // Limit the adjustment step.
-        final int targetTimespan = params.getTargetTimespan();
-        if (timespan < targetTimespan / 4)
-            timespan = targetTimespan / 4;
-        if (timespan > targetTimespan * 4)
-            timespan = targetTimespan * 4;
-
-        BigInteger newDifficulty = Utils.decodeCompactBits(prev.getDifficultyTarget());
-        newDifficulty = newDifficulty.multiply(BigInteger.valueOf(timespan));
-        newDifficulty = newDifficulty.divide(BigInteger.valueOf(targetTimespan));
-
-        if (newDifficulty.compareTo(params.getProofOfWorkLimit()) > 0) {
-            log.info("Difficulty hit proof of work limit: {}", newDifficulty.toString(16));
-            newDifficulty = params.getProofOfWorkLimit();
         }
 
         int accuracyBytes = (int) (nextBlock.getDifficultyTarget() >>> 24) - 3;
