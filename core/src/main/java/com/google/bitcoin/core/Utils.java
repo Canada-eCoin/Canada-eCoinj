@@ -108,7 +108,7 @@ public class Utils {
         int start = (biBytes.length == numBytes + 1) ? 1 : 0;
         int length = Math.min(biBytes.length, numBytes);
         System.arraycopy(biBytes, start, bytes, numBytes - length, length);
-        return bytes;        
+        return bytes;
     }
 
     /**
@@ -159,7 +159,7 @@ public class Utils {
         stream.write((int) (0xFF & (val >> 16)));
         stream.write((int) (0xFF & (val >> 24)));
     }
-    
+
     public static void int64ToByteStreamLE(long val, OutputStream stream) throws IOException {
         stream.write((int) (0xFF & (val >> 0)));
         stream.write((int) (0xFF & (val >> 8)));
@@ -267,19 +267,19 @@ public class Utils {
             buf[i] = bytes[bytes.length - 1 - i];
         return buf;
     }
-    
+
     /**
      * Returns a copy of the given byte array with the bytes of each double-word (4 bytes) reversed.
-     * 
+     *
      * @param bytes length must be divisible by 4.
      * @param trimLength trim output to this length.  If positive, must be divisible by 4.
      */
     public static byte[] reverseDwordBytes(byte[] bytes, int trimLength) {
         checkArgument(bytes.length % 4 == 0);
         checkArgument(trimLength < 0 || trimLength % 4 == 0);
-        
+
         byte[] rev = new byte[trimLength >= 0 && bytes.length > trimLength ? trimLength : bytes.length];
-        
+
         for (int i = 0; i < rev.length; i += 4) {
             System.arraycopy(bytes, i, rev, i , 4);
             for (int j = 0; j < 4; j++) {
@@ -295,7 +295,7 @@ public class Utils {
                 ((bytes[offset++] & 0xFFL) << 16) |
                 ((bytes[offset] & 0xFFL) << 24);
     }
-    
+
     public static long readInt64(byte[] bytes, int offset) {
         return ((bytes[offset++] & 0xFFL) << 0) |
                ((bytes[offset++] & 0xFFL) << 8) |
@@ -356,14 +356,14 @@ public class Utils {
         }
         return (negative ? "-" : "") + formatted.substring(0, formatted.length() - toDelete);
     }
-    
+
     /**
      * <p>
-     * Returns the given value as a plain string denominated in BTC.   
+     * Returns the given value as a plain string denominated in BTC.
      * The result is unformatted with no trailing zeroes.
      * For instance, an input value of BigInteger.valueOf(150000) nanocoin gives an output string of "0.0015" BTC
      * </p>
-     * 
+     *
      * @param value The value in nanocoins to convert to a string (denominated in BTC)
      * @throws IllegalArgumentException
      *            If the input value is null
@@ -372,7 +372,7 @@ public class Utils {
         if (value == null) {
             throw new IllegalArgumentException("Value cannot be null");
         }
-                
+
         BigDecimal valueInBTC = new BigDecimal(value).divide(new BigDecimal(Utils.COIN));
         return valueInBTC.toPlainString();
     }
@@ -399,7 +399,7 @@ public class Utils {
         BigInteger result = new BigInteger(buf);
         return isNegative ? result.negate() : result;
     }
-    
+
     /**
      * MPI encoded numbers are produced by the OpenSSL BN_bn2mpi function. They consist of
      * a 4 byte big endian length field, followed by the stated number of bytes representing
@@ -498,7 +498,7 @@ public class Utils {
         else
             return System.currentTimeMillis();
     }
-    
+
     public static byte[] copyOf(byte[] in, int length) {
         byte[] out = new byte[length];
         System.arraycopy(in, 0, out, 0, Math.min(length, in.length));
@@ -554,15 +554,15 @@ public class Utils {
             throw new RuntimeException(e);  // Cannot happen.
         }
     }
-    
+
     // 00000001, 00000010, 00000100, 00001000, ...
     private static final int bitMask[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-    
+
     // Checks if the given bit is set in data
     public static boolean checkBitLE(byte[] data, int index) {
         return (data[index >>> 3] & bitMask[7 & index]) != 0;
     }
-    
+
     // Sets the given bit in data to one
     public static void setBitLE(byte[] data, int index) {
         data[index >>> 3] |= bitMask[7 & index];
@@ -604,5 +604,23 @@ public class Utils {
         if (mockSleepQueue != null) {
             mockSleepQueue.offer(true);
         }
+    }
+
+    public static long encodeCompactBits(BigInteger value) {
+        long result;
+        int size = value.toByteArray().length;
+        if (size <= 3)
+            result = value.longValue() << 8 * (3 - size);
+        else
+            result = value.shiftRight(8 * (size - 3)).longValue();
+        // The 0x00800000 bit denotes the sign.
+        // Thus, if it is already set, divide the mantissa by 256 and increase the exponent.
+        if ((result & 0x00800000L) != 0) {
+            result >>= 8;
+            size++;
+        }
+        result |= size << 24;
+        result |= value.signum() == -1 ? 0x00800000 : 0;
+        return result;
     }
 }

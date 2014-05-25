@@ -1,0 +1,74 @@
+package org.litecoin;
+
+/**
+ * Created with IntelliJ IDEA.
+ * User: ramzimaalej
+ * Date: 2014-05-24
+ * Time: 9:29 PM
+ * To change this template use File | Settings | File Templates.
+ */
+
+import com.google.bitcoin.core.*;
+import com.google.bitcoin.net.discovery.PeerDBDiscovery;
+
+import java.io.File;
+import java.math.BigInteger;
+
+/**
+ * A version of PeerDBDiscovery that only returns nodes which support Bloom filters according to Litecoin's BLOOM bit
+ */
+public class LitecoinPeerDBDiscovery extends PeerDBDiscovery {
+    // Ugly hack to only let the PeerDB know about peers with NODE_BLOOM (1<<1)
+    // Wrap the connected event listener and intercept calls to it
+    private static class WrappedEventListener extends AbstractPeerEventListener {
+        PeerEventListener parent;
+        NetworkParameters params;
+        WrappedEventListener(NetworkParameters params, PeerEventListener parent) {
+            this.params = params;
+            this.parent = parent;
+        }
+        @Override
+        public Message onPreMessageReceived(Peer p, Message m) {
+            if (m instanceof AddressMessage) {
+                AddressMessage newMessage = new AddressMessage(params);
+                for (PeerAddress addr : ((AddressMessage) m).getAddresses())
+                    if (!CoinDefinition.supportsBloomFiltering || addr.getServices().and(BigInteger.valueOf(1 << 1)).equals(BigInteger.valueOf(1 << 1)))
+                        newMessage.addAddress(addr);
+                return parent.onPreMessageReceived(p, newMessage);
+            }
+            return m;
+        }
+        @Override
+        public void onPeerConnected(Peer p, int peerCount) {
+            if (!CoinDefinition.supportsBloomFiltering || ((p.getPeerVersionMessage().localServices & (1<<1)) == (1<<1) &&
+                    p.getPeerVersionMessage().clientVersion >= 70002))
+                parent.onPeerConnected(p, peerCount);
+            else
+                p.close();
+        }
+
+        @Override
+        public void onPeerDisconnected(Peer p, int peerCount) {
+            if (!CoinDefinition.supportsBloomFiltering || (p.getPeerVersionMessage() != null && (p.getPeerVersionMessage().localServices & (1<<1)) == (1<<1)))
+                parent.onPeerDisconnected(p, peerCount);
+        }
+    }
+
+    private static class PeerGroupWrapper extends PeerGroup {
+        private PeerGroup parent;
+        NetworkParameters params;
+        private PeerGroupWrapper(NetworkParameters params, PeerGroup peerGroup) {
+            super(params);
+            this.params = params;
+            parent = peerGroup;
+        }
+        @Override
+        public void addEventListener(PeerEventListener listener) {
+            parent.addEventListener(new WrappedEventListener(params, listener));
+        }
+    }
+
+    public LitecoinPeerDBDiscovery(NetworkParameters params, File db, PeerGroup group) {
+        super(params, db, new PeerGroupWrapper(params, group));
+    }
+}

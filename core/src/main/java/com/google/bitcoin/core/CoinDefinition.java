@@ -1,9 +1,7 @@
 package com.google.bitcoin.core;
 
 import java.math.BigInteger;
-import java.util.Date;
 import java.util.Map;
-import java.util.Vector;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,6 +19,8 @@ public class CoinDefinition {
     public static final String cryptsyMarketId = "26";
     public static final String cryptsyMarketCurrency = "CDN";
     public static final String PATTERN_PRIVATE_KEY_START = "6";
+
+    public static String lowerCaseCoinName() { return coinName.toLowerCase(); }
 
     public enum CoinPrecision {
         Coins,
@@ -147,9 +147,9 @@ public class CoinDefinition {
     static public String[] testnetDnsSeeds = new String[] {
           "not supported"
     };
-    //from main.h: CAlert::CheckSignature
-    public static final String SATOSHI_KEY = "04A9CFD81AF5D53310BE45E6326E706A542B1028DF85D2819D5DE496D8816C83129CE874FE5E3A23B03544BFF35458833779DAB7A6FF687525A4E23CA59F1E2B94";
-    public static final String TESTNET_SATOSHI_KEY = "";
+    //from main.h: CAlert::CheckSignature checked
+    public static final String SATOSHI_KEY = "040184710fa689ad5023690c80f3a49c8f13f8d45b8c857fbcbc8bc4a8e4d3eb4b10f4d4604fa08dce601aaf0f470216fe1b51850b4acf21b179c45070ac7b03a9";
+    public static final String TESTNET_SATOSHI_KEY = "04302390343f91cc401d56d68b123028bf52e5fca1939df127f63c6467cdf9c8e2c14b61104cf817d0b780da337893ecc4aaff1309e536162dabbdb45200ca2b0a";
 
     /** The string returned by getId() for the main, production network where people trade things. */
     public static final String ID_MAINNET = "org.cancoin.production";
@@ -167,5 +167,9 @@ public class CoinDefinition {
     //Unit Test Information
     public static final String UNITTEST_ADDRESS = "DPHYTSm3f96dHRY3VG1vZAFC1QrEPkEQnt";
     public static final String UNITTEST_ADDRESS_PRIVATE_KEY = "QU1rjHbrdJonVUgjT7Mncw7PEyPv3fMPvaGXp9EHDs1uzdJ98hUZ";
+
+    public static boolean supportsIrcDiscovery() {
+        return PROTOCOL_VERSION <= 70000;
+    }
 
 }

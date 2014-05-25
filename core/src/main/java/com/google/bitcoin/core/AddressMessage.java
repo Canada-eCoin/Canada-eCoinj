@@ -22,8 +22,8 @@ public class AddressMessage extends Message {
      * @param params NetworkParameters object.
      * @param offset The location of the first msg byte within the array.
      * @param parseLazy Whether to perform a full parse immediately or delay until a read is requested.
-     * @param parseRetain Whether to retain the backing byte array for quick reserialization.  
-     * If true and the backing byte array is invalidated due to modification of a field then 
+     * @param parseRetain Whether to retain the backing byte array for quick reserialization.
+     * If true and the backing byte array is invalidated due to modification of a field then
      * the cached bytes may be repopulated and retained if the message is serialized again in the future.
      * @param length The length of message if known.  Usually this is provided when deserializing of the wire
      * as the length will be provided as part of the header.  If unknown then set to Message.UNKNOWN_LENGTH
@@ -37,8 +37,8 @@ public class AddressMessage extends Message {
      * Contruct a new 'addr' message.
      * @param params NetworkParameters object.
      * @param parseLazy Whether to perform a full parse immediately or delay until a read is requested.
-     * @param parseRetain Whether to retain the backing byte array for quick reserialization.  
-     * If true and the backing byte array is invalidated due to modification of a field then 
+     * @param parseRetain Whether to retain the backing byte array for quick reserialization.
+     * If true and the backing byte array is invalidated due to modification of a field then
      * the cached bytes may be repopulated and retained if the message is serialized again in the future.
      * @param length The length of message if known.  Usually this is provided when deserializing of the wire
      * as the length will be provided as part of the header.  If unknown then set to Message.UNKNOWN_LENGTH
@@ -54,6 +54,12 @@ public class AddressMessage extends Message {
 
     AddressMessage(NetworkParameters params, byte[] payload) throws ProtocolException {
         super(params, payload, 0, false, false, UNKNOWN_LENGTH);
+    }
+
+    public AddressMessage(NetworkParameters params) {
+        super(params);
+        numAddresses = 0;
+        addresses = new ArrayList<PeerAddress>((int) numAddresses);
     }
 
     @Override

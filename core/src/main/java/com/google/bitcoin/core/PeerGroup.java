@@ -49,17 +49,17 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * <p>Runs a set of connections to the P2P network, brings up connections to replace disconnected nodes and manages
  * the interaction between them all. Most applications will want to use one of these.</p>
- * 
+ * <p/>
  * <p>PeerGroup tries to maintain a constant number of connections to a set of distinct peers.
  * Each peer runs a network listener in its own thread.  When a connection is lost, a new peer
  * will be tried after a delay as long as the number of connections less than the maximum.</p>
- * 
+ * <p/>
  * <p>Connections are made to addresses from a provided list.  When that list is exhausted,
  * we start again from the head of the list.</p>
- * 
+ * <p/>
  * <p>The PeerGroup can broadcast a transaction to the currently connected set of peers.  It can
  * also handle download of the blockchain from peers, restarting the process when peers die.</p>
- *
+ * <p/>
  * <p>PeerGroup implements the {@link Service} interface. This means before it will do anything,
  * you must call the {@link com.google.common.util.concurrent.Service#start()} method (which returns
  * a future) or {@link com.google.common.util.concurrent.Service#startAndWait()} method, which will block
@@ -75,8 +75,10 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     protected final ReentrantLock lock = Threading.lock("peergroup");
 
     // Addresses to try to connect to, excluding active peers.
-    @GuardedBy("lock") private final PriorityQueue<PeerAddress> inactives;
-    @GuardedBy("lock") private final Map<PeerAddress, ExponentialBackoff> backoffMap;
+    @GuardedBy("lock")
+    private final PriorityQueue<PeerAddress> inactives;
+    @GuardedBy("lock")
+    private final Map<PeerAddress, ExponentialBackoff> backoffMap;
 
     // Currently active peers. This is an ordered list rather than a set to make unit tests predictable.
     private final CopyOnWriteArrayList<Peer> peers;
@@ -85,34 +87,42 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     private final ClientConnectionManager channels;
 
     // The peer that has been selected for the purposes of downloading announced data.
-    @GuardedBy("lock") private Peer downloadPeer;
+    @GuardedBy("lock")
+    private Peer downloadPeer;
     // Callback for events related to chain download
-    @Nullable @GuardedBy("lock") private PeerEventListener downloadListener;
+    @Nullable
+    @GuardedBy("lock")
+    private PeerEventListener downloadListener;
     // Callbacks for events related to peer connection/disconnection
     private final CopyOnWriteArrayList<ListenerRegistration<PeerEventListener>> peerEventListeners;
     // Peer discovery sources, will be polled occasionally if there aren't enough inactives.
     private final CopyOnWriteArraySet<PeerDiscovery> peerDiscoverers;
     // The version message to use for new connections.
-    @GuardedBy("lock") private VersionMessage versionMessage;
+    @GuardedBy("lock")
+    private VersionMessage versionMessage;
     // A class that tracks recent transactions that have been broadcast across the network, counts how many
     // peers announced them and updates the transaction confidence data. It is passed to each Peer.
     private final MemoryPool memoryPool;
     // How many connections we want to have open at the current time. If we lose connections, we'll try opening more
     // until we reach this count.
-    @GuardedBy("lock") private int maxConnections;
+    @GuardedBy("lock")
+    private int maxConnections;
     // Minimum protocol version we will allow ourselves to connect to: require Bloom filtering.
     private volatile int vMinRequiredProtocolVersion = CoinDefinition.MIN_PROTOCOL_VERSION;//FilteredBlock.MIN_PROTOCOL_VERSION;  //Will this break the bloomfiltering in other coin apps?
 
     // Runs a background thread that we use for scheduling pings to our peers, so we can measure their performance
     // and network latency. We ping peers every pingIntervalMsec milliseconds.
     private volatile Timer vPingTimer;
-    /** How many milliseconds to wait after receiving a pong before sending another ping. */
+    /**
+     * How many milliseconds to wait after receiving a pong before sending another ping.
+     */
     public static final long DEFAULT_PING_INTERVAL_MSEC = 2000;
     private long pingIntervalMsec = DEFAULT_PING_INTERVAL_MSEC;
 
     private final NetworkParameters params;
     private final AbstractBlockChain chain;
-    @GuardedBy("lock") private long fastCatchupTimeSecs;
+    @GuardedBy("lock")
+    private long fastCatchupTimeSecs;
     private final CopyOnWriteArrayList<Wallet> wallets;
     private final CopyOnWriteArrayList<PeerFilterProvider> peerFilterProviders;
 
@@ -136,12 +146,14 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
 
     private int minBroadcastConnections = CoinDefinition.minBroadcastConnections;
     private Runnable bloomSendIfChanged = new Runnable() {
-        @Override public void run() {
+        @Override
+        public void run() {
             recalculateFastCatchupAndFilter(FilterRecalculateMode.SEND_IF_CHANGED);
         }
     };
     private Runnable bloomDontSend = new Runnable() {
-        @Override public void run() {
+        @Override
+        public void run() {
             recalculateFastCatchupAndFilter(FilterRecalculateMode.DONT_SEND);
         }
     };
@@ -156,11 +168,13 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
             }
         }
 
-        @Override public void onScriptsAdded(Wallet wallet, List<Script> scripts) {
+        @Override
+        public void onScriptsAdded(Wallet wallet, List<Script> scripts) {
             queueRecalc(true);
         }
 
-        @Override public void onKeysAdded(Wallet wallet, List<ECKey> keys) {
+        @Override
+        public void onKeysAdded(Wallet wallet, List<ECKey> keys) {
             queueRecalc(true);
         }
 
@@ -234,12 +248,14 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     /**
      * <p>A reasonable default for the bloom filter false positive rate on mainnet. FP rates are values between 0.0 and 1.0
      * where 1.0 is "all transactions" i.e. 100%.</p>
-     *
+     * <p/>
      * <p>Users for which low data usage is of utmost concern, 0.0001 may be better, for users
      * to whom anonymity is of utmost concern, 0.001 (0.1%) should provide very good privacy.</p>
      */
     public static final double DEFAULT_BLOOM_FILTER_FP_RATE = 0.0005;
-    /** Maximum increase in FP rate before forced refresh of the bloom filter */
+    /**
+     * Maximum increase in FP rate before forced refresh of the bloom filter
+     */
     public static final double MAX_FP_RATE_INCREASE = 2.0f;
     // The false positive rate for bloomFilter
     private double bloomFilterFPRate = DEFAULT_BLOOM_FILTER_FP_RATE;
@@ -247,7 +263,9 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     private final long bloomFilterTweak = (long) (Math.random() * Long.MAX_VALUE);
     private int lastBloomFilterElementCount;
 
-    /** The default timeout between when a connection attempt begins and version message exchange completes */
+    /**
+     * The default timeout between when a connection attempt begins and version message exchange completes
+     */
     public static final int DEFAULT_CONNECT_TIMEOUT_MILLIS = 5000;
     private volatile int vConnectTimeoutMillis = DEFAULT_CONNECT_TIMEOUT_MILLIS;
 
@@ -344,7 +362,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
             do {
                 try {
                     connectToAnyPeer();
-                } catch(PeerDiscoveryException e) {
+                } catch (PeerDiscoveryException e) {
                     groupBackoff.trackFailure();
                 }
             } while (isRunning() && countConnectedAndPendingPeers() < getMaxConnections());
@@ -356,7 +374,9 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         Uninterruptibles.putUninterruptibly(jobQueue, triggerConnectionsJob);
     }
 
-    /** The maximum number of connections that we will create to peers. */
+    /**
+     * The maximum number of connections that we will create to peers.
+     */
     public int getMaxConnections() {
         lock.lock();
         try {
@@ -403,7 +423,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
      * primarily interesting because it lets you customize the "subVer" field which is used a bit like the User-Agent
      * field from HTTP. It means your client tells the other side what it is, see
      * <a href="https://github.com/bitcoin/bips/blob/master/bip-0014.mediawiki">BIP 14</a>.
-     *
+     * <p/>
      * The VersionMessage you provide is copied and the best chain height/time filled in for each new connection,
      * therefore you don't have to worry about setting that. The provided object is really more of a template.
      */
@@ -429,7 +449,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     }
 
     /**
-     * Sets information that identifies this software to remote nodes. This is a convenience wrapper for creating 
+     * Sets information that identifies this software to remote nodes. This is a convenience wrapper for creating
      * a new {@link VersionMessage}, calling {@link VersionMessage#appendToSubVer(String, String, String)} on it,
      * and then calling {@link PeerGroup#setVersionMessage(VersionMessage)} on the result of that. See the docs for
      * {@link VersionMessage#appendToSubVer(String, String, String)} for information on what the fields should contain.
@@ -442,7 +462,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         ver.appendToSubVer(name, version, comments);
         setVersionMessage(ver);
     }
-    
+
     // Updates the relayTxesBeforeFilter flag of ver
     private void updateVersionMessageRelayTxesBeforeFilter(VersionMessage ver) {
         // We will provide the remote node with a bloom filter (ie they shouldn't relay yet)
@@ -472,12 +492,12 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     /**
      * <p>Adds a listener that will be notified on the given executor when:</p>
      * <ol>
-     *     <li>New peers are connected to.</li>
-     *     <li>Peers are disconnected from.</li>
-     *     <li>A message is received by the download peer (there is always one peer which is elected as a peer which
-     *     will be used to retrieve data).
-     *     <li>Blocks are downloaded by the download peer.</li>
-     *     </li>
+     * <li>New peers are connected to.</li>
+     * <li>Peers are disconnected from.</li>
+     * <li>A message is received by the download peer (there is always one peer which is elected as a peer which
+     * will be used to retrieve data).
+     * <li>Blocks are downloaded by the download peer.</li>
+     * </li>
      * </ol>
      */
     public void addEventListener(PeerEventListener listener, Executor executor) {
@@ -492,7 +512,9 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         addEventListener(listener, Threading.USER_THREAD);
     }
 
-    /** The given event listener will no longer be called with events. */
+    /**
+     * The given event listener will no longer be called with events.
+     */
     public boolean removeEventListener(PeerEventListener listener) {
         return ListenerRegistration.removeFromList(listener, peerEventListeners);
     }
@@ -556,7 +578,9 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         inactives.offer(peerAddress);
     }
 
-    /** Convenience method for addAddress(new PeerAddress(address, params.port)); */
+    /**
+     * Convenience method for addAddress(new PeerAddress(address, params.port));
+     */
     public void addAddress(InetAddress address) {
         addAddress(new PeerAddress(address, params.getPort()));
     }
@@ -582,7 +606,10 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         for (PeerDiscovery peerDiscovery : peerDiscoverers) {
             InetSocketAddress[] addresses;
             addresses = peerDiscovery.getPeers(5, TimeUnit.SECONDS);
-            for (InetSocketAddress address : addresses) addressSet.add(new PeerAddress(address));
+            for (InetSocketAddress address : addresses) {
+                if (address != null)
+                    addressSet.add(new PeerAddress(address));
+            }
             if (addressSet.size() > 0) break;
         }
         lock.lock();
@@ -627,7 +654,9 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         }
     }
 
-    /** Picks a peer from discovery and connects to it. If connection fails, picks another and tries again. */
+    /**
+     * Picks a peer from discovery and connects to it. If connection fails, picks another and tries again.
+     */
     protected void connectToAnyPeer() throws PeerDiscoveryException {
         final State state = state();
         if (!(state == State.STARTING || state == State.RUNNING)) return;
@@ -703,17 +732,17 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
 
     /**
      * <p>Link the given wallet to this PeerGroup. This is used for three purposes:</p>
-     *
+     * <p/>
      * <ol>
-     *   <li>So the wallet receives broadcast transactions.</li>
-     *   <li>Announcing pending transactions that didn't get into the chain yet to our peers.</li>
-     *   <li>Set the fast catchup time using {@link PeerGroup#setFastCatchupTimeSecs(long)}, to optimize chain
-     *       download.</li>
+     * <li>So the wallet receives broadcast transactions.</li>
+     * <li>Announcing pending transactions that didn't get into the chain yet to our peers.</li>
+     * <li>Set the fast catchup time using {@link PeerGroup#setFastCatchupTimeSecs(long)}, to optimize chain
+     * download.</li>
      * </ol>
-     *
+     * <p/>
      * <p>Note that this should be done before chain download commences because if you add a wallet with keys earlier
      * than the current chain head, the relevant parts of the chain won't be redownloaded for you.</p>
-     *
+     * <p/>
      * <p>The Wallet will have an event listener registered on it, so to avoid leaks remember to use
      * {@link PeerGroup#removeWallet(Wallet)} on it if you wish to keep the Wallet but lose the PeerGroup.</p>
      */
@@ -734,7 +763,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     /**
      * <p>Link the given PeerFilterProvider to this PeerGroup. DO NOT use this for Wallets, use
      * {@link PeerGroup#addWallet(Wallet)} instead.</p>
-     *
+     * <p/>
      * <p>Note that this should be done before chain download commences because if you add a listener with keys earlier
      * than the current chain head, the relevant parts of the chain won't be redownloaded for you.</p>
      */
@@ -812,9 +841,15 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
                 bloomFilter = filter;
 
                 switch (mode) {
-                    case SEND_IF_CHANGED: send = changed; break;
-                    case DONT_SEND: send = false; break;
-                    case FORCE_SEND: send = true; break;
+                    case SEND_IF_CHANGED:
+                        send = changed;
+                        break;
+                    case DONT_SEND:
+                        send = false;
+                        break;
+                    case FORCE_SEND:
+                        send = true;
+                        break;
                 }
 
                 if (send) {
@@ -837,13 +872,13 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
             lock.unlock();
         }
     }
-    
+
     /**
      * <p>Sets the false positive rate of bloom filters given to peers. The default is {@link #DEFAULT_BLOOM_FILTER_FP_RATE}.</p>
-     *
+     * <p/>
      * <p>Be careful regenerating the bloom filter too often, as it decreases anonymity because remote nodes can
      * compare transactions against both the new and old filters to significantly decrease the false positive rate.</p>
-     * 
+     * <p/>
      * <p>See the docs for {@link BloomFilter#BloomFilter(int, double, long, BloomFilter.BloomUpdate)} for a brief
      * explanation of anonymity when using bloom filters.</p>
      */
@@ -858,7 +893,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     }
 
     /**
-     * Returns the number of currently connected peers. To be informed when this count changes, register a 
+     * Returns the number of currently connected peers. To be informed when this count changes, register a
      * {@link PeerEventListener} and use the onPeerConnected/onPeerDisconnected methods.
      */
     public int numConnectedPeers() {
@@ -868,7 +903,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     /**
      * Connect to a peer by creating a channel to the destination address.  This should not be
      * used normally - let the PeerGroup manage connections through {@link #start()}
-     * 
+     *
      * @param address destination IP and port.
      * @return The newly created Peer object or null if the peer could not be connected.
      *         Use {@link com.google.bitcoin.core.Peer#getConnectionOpenFuture()} if you
@@ -927,7 +962,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
 
     /**
      * <p>Start downloading the blockchain from the first available peer.</p>
-     *
+     * <p/>
      * <p>If no peers are currently connected, the download will be started once a peer starts.  If the peer dies,
      * the download will resume with another peer.</p>
      *
@@ -952,7 +987,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
 
     /**
      * Download the blockchain from peers. Convenience that uses a {@link DownloadListener} for you.<p>
-     * 
+     * <p/>
      * This method waits until the download is complete.  "Complete" is defined as downloading
      * from at least one peer all the blocks that are in that peer's inventory.
      */
@@ -1031,6 +1066,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         final Runnable[] pingRunnable = new Runnable[1];
         pingRunnable[0] = new Runnable() {
             private boolean firstRun = true;
+
             public void run() {
                 // Ensure that the first ping happens immediately and later pings after the requested delay.
                 if (firstRun) {
@@ -1133,6 +1169,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
      * Returns the current fast catchup time. The contents of blocks before this time won't be downloaded as they
      * cannot contain any interesting transactions. If you use {@link PeerGroup#addWallet(Wallet)} this just returns
      * the min of the wallets earliest key times.
+     *
      * @return a time in seconds since the epoch
      */
     public long getFastCatchupTimeSecs() {
@@ -1235,7 +1272,8 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         }
         final SettableFuture<PeerGroup> future = SettableFuture.create();
         addEventListener(new AbstractPeerEventListener() {
-            @Override public void onPeerConnected(Peer peer, int peerCount) {
+            @Override
+            public void onPeerConnected(Peer peer, int peerCount) {
                 if (peerCount >= numPeers) {
                     future.set(PeerGroup.this);
                     removeEventListener(this);
@@ -1281,7 +1319,7 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
     }
 
     /**
-     * Calls {@link PeerGroup#broadcastTransaction(Transaction,int)} with getMinBroadcastConnections() as the number
+     * Calls {@link PeerGroup#broadcastTransaction(Transaction, int)} with getMinBroadcastConnections() as the number
      * of connections to wait for before commencing broadcast.
      */
     public ListenableFuture<Transaction> broadcastTransaction(final Transaction tx) {
@@ -1294,16 +1332,16 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
      * wrong the exception will be thrown when get() is called, or you can receive it via a callback on the
      * {@link ListenableFuture}. This method returns immediately, so if you want it to block just call get() on the
      * result.</p>
-     *
+     * <p/>
      * <p>Note that if the PeerGroup is limited to only one connection (discovery is not activated) then the future
      * will complete as soon as the transaction was successfully written to that peer.</p>
-     *
+     * <p/>
      * <p>Other than for sending your own transactions, this method is useful if you have received a transaction from
      * someone and want to know that it's valid. It's a bit of a weird hack because the current version of the Bitcoin
      * protocol does not inform you if you send an invalid transaction. Because sending bad transactions counts towards
      * your DoS limit, be careful with relaying lots of unknown transactions. Otherwise you might get kicked off the
      * network.</p>
-     *
+     * <p/>
      * <p>The transaction won't be sent until there are at least minConnections active connections available.
      * A good choice for proportion would be between 0.5 and 0.8 but if you want faster transmission during initial
      * bringup of the peer group you can lower it.</p>
@@ -1387,7 +1425,9 @@ public class PeerGroup extends AbstractExecutionThreadService implements Transac
         this.vMinRequiredProtocolVersion = minRequiredProtocolVersion;
     }
 
-    /** The minimum protocol version required: defaults to the version required for Bloom filtering. */
+    /**
+     * The minimum protocol version required: defaults to the version required for Bloom filtering.
+     */
     public int getMinRequiredProtocolVersion() {
         return vMinRequiredProtocolVersion;
     }
