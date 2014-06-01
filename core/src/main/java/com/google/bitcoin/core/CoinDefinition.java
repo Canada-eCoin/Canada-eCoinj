@@ -53,7 +53,7 @@ public class CoinDefinition {
         return INTERVAL;      //2880
     }
     public static final int getIntervalCheckpoints() {
-        return INTERVAL;    //1080
+        return INTERVAL;    //2880
     }
     public static final int getTargetTimespan(int height, boolean testNet) {
         return TARGET_TIMESPAN;    //24hours
@@ -85,17 +85,17 @@ public class CoinDefinition {
     public static final int p2shHeader = 5;             //base58.h CBitcoinAddress::SCRIPT_ADDRESS checked
     public static final boolean allowBitcoinPrivateKey = true; //for backward compatibility with previous version of cancoin
     public static final int dumpedPrivateKeyHeader = 128;   //common to all coins
-    public static final long PacketMagic = 0xfbc0b6db;      //0xfb, 0xc0, 0xb6, 0xdb
+    public static final long PacketMagic = 0xfdc4b9de;      //0xfd, 0xc4, 0xb9, 0xde
 
     //Genesis Block Information from main.cpp: LoadBlockIndex
     static public long genesisBlockDifficultyTarget = (0x1e0ffff0L);         //main.cpp: LoadBlockIndex checked
     static public long genesisBlockTime = 1396006396L;                       //main.cpp: LoadBlockIndex checked
     static public long genesisBlockNonce = (800327);                         //main.cpp: LoadBlockIndex checked
-    static public String genesisHash = "0x863626dadaef221e2e2f30ff3dacae44cabdae9e0028058072181b3fb675d94a"; //main.cpp: hashGenesisBlock checked
+    static public String genesisHash = "863626dadaef221e2e2f30ff3dacae44cabdae9e0028058072181b3fb675d94a"; //main.cpp: hashGenesisBlock checked
     static public int genesisBlockValue = 50;                                                              //main.cpp: LoadBlockIndex checked
     //taken from the raw data of the block explorer
-    static public String genesisXInBytes = "04ffff001d0104294469676974616c636f696e2c20412043757272656e637920666f722061204469676974616c20416765";
-    static public String genessiXOutBytes = "04a5814813115273a109cff99907ba4a05d951873dae7acb6c973d0c9e7c88911a3dbc9aa600deac241b91707e7b4ffb30ad91c8e56e695a1ddf318592988afe0a";
+    static public String genesisXInBytes = "04ffff001d01042b4a6f7365706820577269676874204a722e2077617320626f726e206f6e2074686973206461792031393036";
+    static public String genessiXOutBytes = "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"; // checked
 
     //net.cpp strDNSSeed checked
     static public String[] dnsSeeds = new String[] {
@@ -112,9 +112,9 @@ public class CoinDefinition {
     public static final int testnetp2shHeader = 196;             //base58.h CBitcoinAddress::SCRIPT_ADDRESS_TEST checked
     public static final long testnetPacketMagic = 0xfcc1b7dc;      //0xfc, 0xc1, 0xb7, 0xdc
     public static final String testnetGenesisHash = "5e039e1ca1dbf128973bf6cff98169e40a1b194c3b91463ab74956f413b2f9c8";
-    static public long testnetGenesisBlockDifficultyTarget = (0x1e0ffff0L);         //main.cpp: LoadBlockIndex
-    static public long testnetGenesisBlockTime = 999999L;                       //main.cpp: LoadBlockIndex
-    static public long testnetGenesisBlockNonce = (99999);                         //main.cpp: LoadBlockIndex
+    static public long testnetGenesisBlockDifficultyTarget = (0x1e0ffff0L);         //main.cpp: LoadBlockIndex checked
+    static public long testnetGenesisBlockTime = 1395301765L;                       //main.cpp: LoadBlockIndex checked
+    static public long testnetGenesisBlockNonce = (0);                         //main.cpp: LoadBlockIndex checked
 
     //main.cpp GetBlockValue(height, fee) checked
     public static final BigInteger GetBlockReward(int height)
@@ -142,7 +142,7 @@ public class CoinDefinition {
 
     public static int subsidyDecreaseBlockCount = 500000;     //main.cpp GetBlockValue(height, fee) checked
 
-    public static BigInteger proofOfWorkLimit = Utils.decodeCompactBits(0x1e0fffffL);  //main.cpp bnProofOfWorkLimit (~uint256(0) >> 20); // digitalcoin: starting difficulty is 1 / 2^12 checked
+    public static BigInteger proofOfWorkLimit = Utils.decodeCompactBits(0x1e0fffffL);  //main.cpp bnProofOfWorkLimit (~uint256(0) >> 20); // canecoin: starting difficulty is 1 / 2^12 checked
 
     static public String[] testnetDnsSeeds = new String[] {
           "not supported"
@@ -161,7 +161,7 @@ public class CoinDefinition {
     //checkpoints.cpp Checkpoints::mapCheckpoints checked
     public static void initCheckpoints(Map<Integer, Sha256Hash> checkpoints)
     {
-        checkpoints.put( 0, new Sha256Hash("0x863626dadaef221e2e2f30ff3dacae44cabdae9e0028058072181b3fb675d94a"));
+        checkpoints.put( 0, new Sha256Hash("863626dadaef221e2e2f30ff3dacae44cabdae9e0028058072181b3fb675d94a"));
     }
 
     //Unit Test Information

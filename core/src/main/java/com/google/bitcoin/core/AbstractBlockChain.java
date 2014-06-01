@@ -797,12 +797,12 @@ public abstract class AbstractBlockChain {
      * Throws an exception if the blocks difficulty is not correct.
      */
     private void checkDifficultyTransitions(StoredBlock storedPrev, Block nextBlock) throws BlockStoreException, VerificationException {
-        checkState(lock.isLocked());
+        checkState(lock.isHeldByCurrentThread());
         Block prev = storedPrev.getHeader();
 
         // Is this supposed to be a difficulty transition point?
-        if ((storedPrev.getHeight() + 1) % CoinDefinition.INTERVAL != 0) {
-            // TODO RM double check this method
+        if ((storedPrev.getHeight() + 1) % params.getInterval() != 0) {
+
             // TODO: Refactor this hack after 0.5 is released and we stop supporting deserialization compatibility.
             // This should be a method of the NetworkParameters, which should in turn be using singletons and a subclass
             // for each network type. Then each network can define its own difficulty transition rules.
@@ -810,14 +810,26 @@ public abstract class AbstractBlockChain {
                 checkTestnetDifficulty(storedPrev, prev, nextBlock);
                 return;
             }
+
+            // No ... so check the difficulty didn't actually change.
+            if (nextBlock.getDifficultyTarget() != prev.getDifficultyTarget())
+                throw new VerificationException("Unexpected change in difficulty at height " + storedPrev.getHeight() +
+                        ": " + Long.toHexString(nextBlock.getDifficultyTarget()) + " vs " +
+                        Long.toHexString(prev.getDifficultyTarget()));
             return;
         }
 
         // We need to find a block far back in the chain. It's OK that this is expensive because it only occurs every
         // two weeks after the initial block chain download.
         long now = System.currentTimeMillis();
+
+        int blocktogoback = params.interval - 1;
+        if(storedPrev.getHeight()+1 != params.interval) {
+            blocktogoback = params.interval;
+        }
+
         StoredBlock cursor = blockStore.get(prev.getHash());
-        for (int i = 0; i < params.getInterval() - 1; i++) {
+        for (int i = 0; i < blocktogoback; i++) {
             if (cursor == null) {
                 // This should never happen. If it does, it means we are following an incorrect or busted chain.
                 throw new VerificationException(
@@ -842,22 +854,21 @@ public abstract class AbstractBlockChain {
         newDifficulty = newDifficulty.multiply(BigInteger.valueOf(timespan));
         newDifficulty = newDifficulty.divide(BigInteger.valueOf(targetTimespan));
 
-        if (newDifficulty.compareTo(CoinDefinition.proofOfWorkLimit) > 0) {
+        if (newDifficulty.compareTo(params.getProofOfWorkLimit()) > 0) {
             log.info("Difficulty hit proof of work limit: {}", newDifficulty.toString(16));
-            newDifficulty = CoinDefinition.proofOfWorkLimit;
+            newDifficulty = params.getProofOfWorkLimit();
         }
 
         int accuracyBytes = (int) (nextBlock.getDifficultyTarget() >>> 24) - 3;
-        long receivedDifficultyCompact = nextBlock.getDifficultyTarget();
+        BigInteger receivedDifficulty = nextBlock.getDifficultyTargetAsInteger();
 
         // The calculated difficulty is to a higher precision than received, so reduce here.
         BigInteger mask = BigInteger.valueOf(0xFFFFFFL).shiftLeft(accuracyBytes * 8);
         newDifficulty = newDifficulty.and(mask);
-        long newDifficultyCompact = Utils.encodeCompactBits(newDifficulty);
 
-        if (newDifficultyCompact != receivedDifficultyCompact)
+        if (newDifficulty.compareTo(receivedDifficulty) != 0)
             throw new VerificationException("Network provided difficulty bits do not match what was calculated: " +
-                    newDifficultyCompact + " vs " + receivedDifficultyCompact);
+                    receivedDifficulty.toString(16) + " vs " + newDifficulty.toString(16));
     }
 
     private void checkTestnetDifficulty(StoredBlock storedPrev, Block prev, Block next) throws VerificationException, BlockStoreException {
