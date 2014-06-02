@@ -94,7 +94,7 @@ public class CoinDefinition {
     static public String genesisHash = "863626dadaef221e2e2f30ff3dacae44cabdae9e0028058072181b3fb675d94a"; //main.cpp: hashGenesisBlock checked
     static public int genesisBlockValue = 50;                                                              //main.cpp: LoadBlockIndex checked
     //taken from the raw data of the block explorer
-    static public String genesisXInBytes = "04ffff001d01042b4a6f7365706820577269676874204a722e2077617320626f726e206f6e2074686973206461792031393036";
+    static public String genesisXInBytes = "04ffff001d01042b4a6f7365706820577269676874204a722e2077617320626f726e206f6e2074686973206461792031393036"; // checked
     static public String genessiXOutBytes = "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"; // checked
 
     //net.cpp strDNSSeed checked
